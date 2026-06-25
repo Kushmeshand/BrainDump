@@ -10,6 +10,7 @@ export interface PdfItem {
   pageCount?: number;
   collectionId: string | null;
   favorite: boolean;
+  tags: string[];
   createdAt: number;
   updatedAt: number;
 }

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/Home';
 import SearchScreen from '../screens/Search';
 import CollectionsScreen from '../screens/Collections';
+import FavoritesScreen from '../screens/Favorites';
 import SettingsScreen from '../screens/Settings';
 import { RootTabParamList } from '../types/navigation';
 import { useColorScheme } from 'nativewind';
@@ -28,6 +29,8 @@ export default function AppNavigator(): React.JSX.Element {
             iconName = focused ? 'search' : 'search-outline';
           } else if (route.name === 'Collections') {
             iconName = focused ? 'folder-open' : 'folder-open-outline';
+          } else if (route.name === 'Favorites') {
+            iconName = focused ? 'star' : 'star-outline';
           } else {
             iconName = focused ? 'settings' : 'settings-outline';
           }
@@ -70,6 +73,11 @@ export default function AppNavigator(): React.JSX.Element {
         name="Collections" 
         component={CollectionsScreen} 
         options={{ title: 'My Collections' }}
+      />
+      <Tab.Screen 
+        name="Favorites" 
+        component={FavoritesScreen} 
+        options={{ title: 'Favorites' }}
       />
       <Tab.Screen 
         name="Settings" 

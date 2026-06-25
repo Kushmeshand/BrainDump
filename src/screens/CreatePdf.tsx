@@ -7,6 +7,7 @@ import { RootStackParamList } from '../types/navigation';
 import { useCollectionsStore } from '../store/collectionsStore';
 import { usePdfsStore } from '../store/pdfsStore';
 import { createPdf, updatePdf, deletePdf } from '../services/pdfs';
+import TagInput from '../components/TagInput';
 
 export default function CreatePdfScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -22,6 +23,7 @@ export default function CreatePdfScreen() {
   const [title, setTitle] = useState(existingPdf?.title || '');
   const [description, setDescription] = useState(existingPdf?.description || '');
   const [collectionId, setCollectionId] = useState<string | null>(existingPdf?.collectionId || null);
+  const [tags, setTags] = useState<string[]>(existingPdf?.tags || []);
   const [favorite, setFavorite] = useState(existingPdf?.favorite || false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadIndex, setUploadIndex] = useState(0);
@@ -33,7 +35,7 @@ export default function CreatePdfScreen() {
     try {
       if (existingPdf) {
         const finalTitle = title.trim() || 'Untitled PDF';
-        await updatePdf(existingPdf.id, finalTitle, description, collectionId, favorite);
+        await updatePdf(existingPdf.id, finalTitle, description, collectionId, tags, favorite);
         navigation.goBack();
       } else if (selectedUris.length > 0) {
         for (let i = 0; i < selectedUris.length; i++) {
@@ -54,6 +56,7 @@ export default function CreatePdfScreen() {
             finalTitle,
             description,
             collectionId,
+            tags,
             favorite,
             (progress) => setUploadProgress(progress)
           );
@@ -153,6 +156,11 @@ export default function CreatePdfScreen() {
               placeholderTextColor="#a8a29e"
               className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl px-4 py-3 text-stone-800 dark:text-stone-100"
             />
+          </View>
+
+          <View className="mt-4">
+            <Text className="text-sm font-semibold text-stone-600 dark:text-stone-400 mb-1 ml-1">Tags</Text>
+            <TagInput tags={tags} setTags={setTags} />
           </View>
 
           <View className="mt-4">

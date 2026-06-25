@@ -26,6 +26,8 @@ export const subscribeToPdfs = () => {
       pdfsList.push({ 
         id: docSnap.id, 
         ...data,
+        tags: data.tags || [],
+        favorite: data.favorite || false,
         createdAt,
         updatedAt
       } as PdfItem);
@@ -46,6 +48,7 @@ export const createPdf = async (
   title: string,
   description: string,
   collectionId: string | null = null,
+  tags: string[] = [],
   favorite: boolean = false,
   onProgress?: (progress: number) => void
 ): Promise<string> => {
@@ -91,6 +94,7 @@ export const createPdf = async (
             fileSize: fileSize || response.bytes,
             pageCount: response.pages,
             collectionId,
+            tags,
             favorite,
             createdAt: now,
             updatedAt: now,
@@ -124,11 +128,12 @@ export const updatePdf = async (
   title: string, 
   description: string, 
   collectionId: string | null = null,
+  tags: string[] = [],
   favorite: boolean = false
 ) => {
   const store = usePdfsStore.getState();
   store.setPdfs(
-    store.pdfs.map(pdf => pdf.id === id ? { ...pdf, title, description, collectionId, favorite, updatedAt: Date.now() } : pdf)
+    store.pdfs.map(pdf => pdf.id === id ? { ...pdf, title, description, collectionId, tags, favorite, updatedAt: Date.now() } : pdf)
   );
 
   const pdfRef = doc(db, PDFS_PATH, id);
@@ -136,6 +141,7 @@ export const updatePdf = async (
     title,
     description,
     collectionId,
+    tags,
     favorite,
     updatedAt: Date.now(),
   });

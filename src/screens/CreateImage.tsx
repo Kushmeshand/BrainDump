@@ -7,6 +7,7 @@ import { RootStackParamList } from '../types/navigation';
 import { useCollectionsStore } from '../store/collectionsStore';
 import { useImagesStore } from '../store/imagesStore';
 import { createImage, updateImage, deleteImage } from '../services/images';
+import TagInput from '../components/TagInput';
 
 export default function CreateImageScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -22,6 +23,7 @@ export default function CreateImageScreen() {
   const [title, setTitle] = useState(existingImage?.title || '');
   const [description, setDescription] = useState(existingImage?.description || '');
   const [collectionId, setCollectionId] = useState<string | null>(existingImage?.collectionId || null);
+  const [tags, setTags] = useState<string[]>(existingImage?.tags || []);
   const [favorite, setFavorite] = useState(existingImage?.favorite || false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadIndex, setUploadIndex] = useState(0);
@@ -34,7 +36,7 @@ export default function CreateImageScreen() {
       if (existingImage) {
         // Edit mode: only update Firestore, DO NOT re-upload image
         const finalTitle = title.trim() || 'Untitled Image';
-        await updateImage(existingImage.id, finalTitle, description, collectionId, favorite);
+        await updateImage(existingImage.id, finalTitle, description, collectionId, tags, favorite);
         navigation.goBack();
       } else if (selectedUris.length > 0) {
         // Create mode: sequentially upload images
@@ -52,6 +54,7 @@ export default function CreateImageScreen() {
             finalTitle,
             description,
             collectionId,
+            tags,
             favorite,
             (progress) => setUploadProgress(progress)
           );
@@ -151,6 +154,11 @@ export default function CreateImageScreen() {
               placeholderTextColor="#a8a29e"
               className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-xl px-4 py-3 text-stone-800 dark:text-stone-100"
             />
+          </View>
+
+          <View className="mt-4">
+            <Text className="text-sm font-semibold text-stone-600 dark:text-stone-400 mb-1 ml-1">Tags</Text>
+            <TagInput tags={tags} setTags={setTags} />
           </View>
 
           <View className="mt-4">

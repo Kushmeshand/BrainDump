@@ -26,6 +26,8 @@ export const subscribeToLinks = () => {
       linksList.push({ 
         id: docSnap.id, 
         ...data,
+        tags: data.tags || [],
+        favorite: data.favorite || false,
         createdAt,
         updatedAt
       } as Link);
@@ -39,7 +41,7 @@ export const subscribeToLinks = () => {
   });
 };
 
-export const createLink = async (title: string, url: string, description: string, tags: string[], collectionId: string | null = null) => {
+export const createLink = async (title: string, url: string, description: string, tags: string[], collectionId: string | null = null, favorite: boolean = false) => {
   const linksRef = collection(db, LINKS_PATH);
   const newDocRef = doc(linksRef);
 
@@ -49,6 +51,7 @@ export const createLink = async (title: string, url: string, description: string
     url,
     description,
     tags,
+    favorite,
     collectionId,
     createdAt: now,
     updatedAt: now,
@@ -67,10 +70,10 @@ export const createLink = async (title: string, url: string, description: string
   return newDocRef.id;
 };
 
-export const updateLink = async (id: string, title: string, url: string, description: string, tags: string[], collectionId: string | null = null) => {
+export const updateLink = async (id: string, title: string, url: string, description: string, tags: string[], collectionId: string | null = null, favorite: boolean = false) => {
   const store = useLinksStore.getState();
   store.setLinks(
-    store.links.map(l => l.id === id ? { ...l, title, url, description, tags, collectionId, updatedAt: Date.now() } : l)
+    store.links.map(l => l.id === id ? { ...l, title, url, description, tags, favorite, collectionId, updatedAt: Date.now() } : l)
   );
 
   const linkRef = doc(db, LINKS_PATH, id);
@@ -79,6 +82,7 @@ export const updateLink = async (id: string, title: string, url: string, descrip
     url,
     description,
     tags,
+    favorite,
     collectionId,
     updatedAt: Date.now(),
   });

@@ -98,7 +98,7 @@ export default function CollectionsScreen() {
 
         {/* Grid of folders */}
         <View className="flex-row flex-wrap justify-between gap-y-4 mb-12">
-          {collections.map((item) => (
+          {[...collections].sort((a, b) => a.name.localeCompare(b.name)).map((item) => (
             <TouchableOpacity 
               key={item.id}
               onPress={() => navigation.navigate('CollectionDetails', { collectionId: item.id })}

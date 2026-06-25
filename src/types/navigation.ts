@@ -2,6 +2,7 @@ export type RootTabParamList = {
   Home: undefined;
   Search: undefined;
   Collections: undefined;
+  Favorites: undefined;
   Settings: undefined;
 };
 

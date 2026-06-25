@@ -28,6 +28,8 @@ export const subscribeToNotes = () => {
       notesList.push({ 
         id: docSnap.id, 
         ...data,
+        tags: data.tags || [],
+        favorite: data.favorite || false,
         createdAt,
         updatedAt
       } as Note);
@@ -41,7 +43,7 @@ export const subscribeToNotes = () => {
   });
 };
 
-export const createNote = async (title: string, content: string, collectionId: string | null = null) => {
+export const createNote = async (title: string, content: string, collectionId: string | null = null, tags: string[] = [], favorite: boolean = false) => {
   const notesRef = collection(db, NOTES_PATH);
   const newDocRef = doc(notesRef); // Generate ID instantly locally
 
@@ -50,6 +52,8 @@ export const createNote = async (title: string, content: string, collectionId: s
     title,
     content,
     collectionId,
+    tags,
+    favorite,
     createdAt: now,
     updatedAt: now,
   };
@@ -68,10 +72,10 @@ export const createNote = async (title: string, content: string, collectionId: s
   return newDocRef.id;
 };
 
-export const updateNote = async (id: string, title: string, content: string, collectionId: string | null = null) => {
+export const updateNote = async (id: string, title: string, content: string, collectionId: string | null = null, tags: string[] = [], favorite: boolean = false) => {
   const store = useNotesStore.getState();
   store.setNotes(
-    store.notes.map(n => n.id === id ? { ...n, title, content, collectionId, updatedAt: Date.now() } : n)
+    store.notes.map(n => n.id === id ? { ...n, title, content, collectionId, tags, favorite, updatedAt: Date.now() } : n)
   );
 
   const noteRef = doc(db, NOTES_PATH, id);
@@ -79,6 +83,8 @@ export const updateNote = async (id: string, title: string, content: string, col
     title,
     content,
     collectionId,
+    tags,
+    favorite,
     updatedAt: Date.now(),
   });
 };

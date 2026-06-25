@@ -11,6 +11,7 @@ export interface ImageItem {
   bytes: number;
   collectionId: string | null;
   favorite: boolean;
+  tags: string[];
   createdAt: number;
   updatedAt: number;
 }

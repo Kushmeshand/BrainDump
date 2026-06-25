@@ -7,6 +7,7 @@ import { RootStackParamList } from '../types/navigation';
 import { useCollectionsStore } from '../store/collectionsStore';
 import { useNotesStore } from '../store/notesStore';
 import { createNote, updateNote, deleteNote } from '../services/notes';
+import TagInput from '../components/TagInput';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateNote'>;
 
@@ -18,6 +19,8 @@ export default function CreateNoteScreen({ route, navigation }: Props) {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [collectionId, setCollectionId] = useState<string | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
+  const [favorite, setFavorite] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCollections, setShowCollections] = useState(false);
 
@@ -28,6 +31,8 @@ export default function CreateNoteScreen({ route, navigation }: Props) {
         setTitle(existingNote.title);
         setContent(existingNote.content);
         setCollectionId(existingNote.collectionId);
+        setTags(existingNote.tags || []);
+        setFavorite(existingNote.favorite || false);
       }
     }
   }, [noteId, notes]);
@@ -43,9 +48,9 @@ export default function CreateNoteScreen({ route, navigation }: Props) {
       // Fire and forget (Optimistic Update)
       // Firestore will update the local listener immediately, so we don't need to await the server response.
       if (noteId) {
-        updateNote(noteId, title.trim(), content.trim(), collectionId).catch(console.error);
+        updateNote(noteId, title.trim(), content.trim(), collectionId, tags, favorite).catch(console.error);
       } else {
-        createNote(title.trim(), content.trim(), collectionId).catch(console.error);
+        createNote(title.trim(), content.trim(), collectionId, tags, favorite).catch(console.error);
       }
       
       // Dismiss screen immediately
@@ -95,6 +100,9 @@ export default function CreateNoteScreen({ route, navigation }: Props) {
                 <Ionicons name="trash-outline" size={24} color="#ef4444" />
               </TouchableOpacity>
             )}
+            <TouchableOpacity onPress={() => setFavorite(!favorite)} className="p-2 mr-2">
+              <Ionicons name={favorite ? "star" : "star-outline"} size={24} color={favorite ? "#eab308" : "#a8a29e"} />
+            </TouchableOpacity>
             <TouchableOpacity 
               onPress={handleSave} 
               disabled={isSubmitting || (!title.trim() && !content.trim())}
@@ -151,6 +159,8 @@ export default function CreateNoteScreen({ route, navigation }: Props) {
               ))}
             </View>
           )}
+
+          <TagInput tags={tags} setTags={setTags} />
 
           <TextInput
             placeholder="Start typing..."

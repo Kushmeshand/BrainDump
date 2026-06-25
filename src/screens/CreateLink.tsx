@@ -7,6 +7,7 @@ import { RootStackParamList } from '../types/navigation';
 import { useCollectionsStore } from '../store/collectionsStore';
 import { useLinksStore } from '../store/linksStore';
 import { createLink, updateLink, deleteLink } from '../services/links';
+import TagInput from '../components/TagInput';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateLink'>;
 
@@ -19,6 +20,8 @@ export default function CreateLinkScreen({ route, navigation }: Props) {
   const [url, setUrl] = useState('');
   const [description, setDescription] = useState('');
   const [collectionId, setCollectionId] = useState<string | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
+  const [favorite, setFavorite] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCollections, setShowCollections] = useState(false);
 
@@ -30,6 +33,8 @@ export default function CreateLinkScreen({ route, navigation }: Props) {
         setUrl(existingLink.url);
         setDescription(existingLink.description);
         setCollectionId(existingLink.collectionId);
+        setTags(existingLink.tags || []);
+        setFavorite(existingLink.favorite || false);
       }
     }
   }, [linkId, links]);
@@ -58,9 +63,9 @@ export default function CreateLinkScreen({ route, navigation }: Props) {
     setIsSubmitting(true);
     try {
       if (linkId) {
-        updateLink(linkId, title.trim(), formattedUrl, description.trim(), [], collectionId).catch(console.error);
+        updateLink(linkId, title.trim(), formattedUrl, description.trim(), tags, collectionId, favorite).catch(console.error);
       } else {
-        createLink(title.trim() || formattedUrl, formattedUrl, description.trim(), [], collectionId).catch(console.error);
+        createLink(title.trim() || formattedUrl, formattedUrl, description.trim(), tags, collectionId, favorite).catch(console.error);
       }
       
       navigation.goBack();
@@ -115,6 +120,9 @@ export default function CreateLinkScreen({ route, navigation }: Props) {
                 <Ionicons name="trash-outline" size={24} color="#ef4444" />
               </TouchableOpacity>
             )}
+            <TouchableOpacity onPress={() => setFavorite(!favorite)} className="p-2 mr-2">
+              <Ionicons name={favorite ? "star" : "star-outline"} size={24} color={favorite ? "#eab308" : "#a8a29e"} />
+            </TouchableOpacity>
             <TouchableOpacity 
               onPress={handleSave} 
               disabled={isSubmitting || !url.trim()}
@@ -191,6 +199,8 @@ export default function CreateLinkScreen({ route, navigation }: Props) {
               ))}
             </View>
           )}
+
+          <TagInput tags={tags} setTags={setTags} />
 
           <TextInput
             placeholder="Add a description or notes about this link..."

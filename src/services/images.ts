@@ -28,6 +28,8 @@ export const subscribeToImages = () => {
       imagesList.push({ 
         id: docSnap.id, 
         ...data,
+        tags: data.tags || [],
+        favorite: data.favorite || false,
         createdAt,
         updatedAt
       } as ImageItem);
@@ -46,6 +48,7 @@ export const createImage = async (
   title: string,
   description: string,
   collectionId: string | null = null,
+  tags: string[] = [],
   favorite: boolean = false,
   onProgress?: (progress: number) => void
 ): Promise<string> => {
@@ -91,6 +94,7 @@ export const createImage = async (
             format: response.format,
             bytes: response.bytes,
             collectionId,
+            tags,
             favorite,
             createdAt: now,
             updatedAt: now,
@@ -124,11 +128,12 @@ export const updateImage = async (
   title: string, 
   description: string, 
   collectionId: string | null = null,
+  tags: string[] = [],
   favorite: boolean = false
 ) => {
   const store = useImagesStore.getState();
   store.setImages(
-    store.images.map(img => img.id === id ? { ...img, title, description, collectionId, favorite, updatedAt: Date.now() } : img)
+    store.images.map(img => img.id === id ? { ...img, title, description, collectionId, tags, favorite, updatedAt: Date.now() } : img)
   );
 
   const imageRef = doc(db, IMAGES_PATH, id);
@@ -136,6 +141,7 @@ export const updateImage = async (
     title,
     description,
     collectionId,
+    tags,
     favorite,
     updatedAt: Date.now(),
   });
