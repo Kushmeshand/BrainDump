@@ -4,6 +4,8 @@ import AppNavigator from './AppNavigator';
 import CreateNoteScreen from '../screens/CreateNote';
 import CreateLinkScreen from '../screens/CreateLink';
 import CollectionDetailsScreen from '../screens/CollectionDetails';
+import CreateImageScreen from '../screens/CreateImage';
+import ImageViewerScreen from '../screens/ImageViewer';
 import { RootStackParamList } from '../types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -25,6 +27,16 @@ export default function RootNavigator(): React.JSX.Element {
       <Stack.Screen 
         name="CollectionDetails" 
         component={CollectionDetailsScreen} 
+      />
+      <Stack.Screen 
+        name="CreateImage" 
+        component={CreateImageScreen} 
+        options={{ presentation: 'fullScreenModal' }}
+      />
+      <Stack.Screen 
+        name="ImageViewer" 
+        component={ImageViewerScreen} 
+        options={{ presentation: 'fullScreenModal' }}
       />
     </Stack.Navigator>
   );

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp, NavigationProp } from '@react-navigation/native';
@@ -7,6 +7,30 @@ import { RootStackParamList } from '../types/navigation';
 import { useCollectionsStore } from '../store/collectionsStore';
 import { useNotesStore } from '../store/notesStore';
 import { useLinksStore } from '../store/linksStore';
+import { useImagesStore } from '../store/imagesStore';
+
+const FeedItemIcon = ({ item }: { item: any }) => {
+  const [error, setError] = useState(false);
+
+  if (item.type === 'image' && item.imageUrl && !error) {
+    return (
+      <View className="w-16 h-16 rounded-xl bg-stone-100 dark:bg-stone-800 mr-3 overflow-hidden">
+        <Image 
+          source={{ uri: item.imageUrl }} 
+          style={{ width: '100%', height: '100%' }}
+          resizeMode="cover" 
+          onError={() => setError(true)}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${item.type === 'note' ? 'bg-amber-50 dark:bg-amber-900/30' : item.type === 'link' ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-emerald-50 dark:bg-emerald-900/30'}`}>
+      <Ionicons name={item.type === 'note' ? 'document-text' : item.type === 'link' ? 'link' : 'image'} size={20} color={item.type === 'note' ? '#f59e0b' : item.type === 'link' ? '#3b82f6' : '#10b981'} />
+    </View>
+  );
+};
 
 type CollectionDetailsRouteProp = RouteProp<RootStackParamList, 'CollectionDetails'>;
 
@@ -27,9 +51,14 @@ export default function CollectionDetailsScreen() {
     state.links.filter(l => l.collectionId === collectionId)
   );
 
-  const allItems = [
+  const images = useImagesStore(state => 
+    state.images.filter(img => img.collectionId === collectionId)
+  );
+
+  const collectionItems = [
     ...notes.map(n => ({ ...n, type: 'note' as const })),
-    ...links.map(l => ({ ...l, type: 'link' as const }))
+    ...links.map(l => ({ ...l, type: 'link' as const })),
+    ...images.map(img => ({ ...img, type: 'image' as const }))
   ].sort((a, b) => b.createdAt - a.createdAt);
 
   if (!collection) {
@@ -64,36 +93,42 @@ export default function CollectionDetailsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }} className="flex-1 px-4 mt-2">
-        <View className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-850 overflow-hidden shadow-sm">
-          {allItems.length === 0 ? (
-            <View className="p-8 items-center justify-center">
-              <View className="w-16 h-16 rounded-full bg-stone-50 dark:bg-stone-800/50 items-center justify-center mb-4">
+        <View className="mb-12">
+          {collectionItems.length === 0 ? (
+            <View className="bg-white dark:bg-stone-900 rounded-3xl p-8 items-center border border-stone-100 dark:border-stone-850 border-dashed">
+              <View className="w-16 h-16 rounded-full bg-stone-50 dark:bg-stone-800 items-center justify-center mb-4">
                 <Ionicons name="folder-open-outline" size={32} color="#a8a29e" />
               </View>
-              <Text className="text-stone-500 font-medium text-center">No items in this collection yet.</Text>
-              <Text className="text-stone-400 text-xs text-center mt-1">Tap Quick Add on Home to create one!</Text>
+              <Text className="text-stone-800 dark:text-stone-100 font-bold text-lg mb-2">Empty Collection</Text>
+              <Text className="text-stone-500 dark:text-stone-400 text-center px-4">
+                This collection doesn't have any notes, links, or images yet. Add items via Quick Add.
+              </Text>
             </View>
           ) : (
-            allItems.map((item, index) => (
-              <TouchableOpacity 
-                key={item.id}
-                onPress={() => item.type === 'note' ? navigation.navigate('CreateNote', { noteId: item.id }) : navigation.navigate('CreateLink', { linkId: item.id })}
-                className={`flex-row items-center p-4 ${index !== allItems.length - 1 ? 'border-b border-stone-50 dark:border-stone-850' : ''}`}
-              >
-                <View className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${item.type === 'note' ? 'bg-amber-50 dark:bg-amber-900/30' : 'bg-blue-50 dark:bg-blue-900/30'}`}>
-                  <Ionicons name={item.type === 'note' ? 'document-text' : 'link'} size={20} color={item.type === 'note' ? '#f59e0b' : '#3b82f6'} />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-stone-800 dark:text-stone-100 font-semibold text-sm" numberOfLines={1}>
-                    {item.title || (item.type === 'note' ? 'Untitled Note' : item.url)}
-                  </Text>
-                  <Text className="text-stone-400 dark:text-stone-550 text-xs" numberOfLines={1}>
-                    {item.type === 'note' ? (item.content.substring(0, 50) || 'Empty note') : (item.description || item.url)}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color="#d6d3d1" />
-              </TouchableOpacity>
-            ))
+            <View className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-100 dark:border-stone-850 overflow-hidden shadow-sm">
+              {collectionItems.map((item, index) => (
+                <TouchableOpacity 
+                  key={item.id}
+                  onPress={() => {
+                    if (item.type === 'note') navigation.navigate('CreateNote', { noteId: item.id });
+                    else if (item.type === 'link') navigation.navigate('CreateLink', { linkId: item.id });
+                    else if (item.type === 'image') navigation.navigate('CreateImage', { imageId: item.id });
+                  }}
+                  className={`flex-row items-center p-4 ${index !== collectionItems.length - 1 ? 'border-b border-stone-50 dark:border-stone-850' : ''}`}
+                >
+                  <FeedItemIcon item={item} />
+                  <View className="flex-1">
+                    <Text className="text-stone-800 dark:text-stone-100 font-semibold text-base" numberOfLines={1}>
+                      {item.title || (item.type === 'note' ? 'Untitled Note' : item.type === 'image' ? 'Untitled Image' : item.url)}
+                    </Text>
+                    <Text className="text-stone-400 dark:text-stone-550 text-xs mt-0.5" numberOfLines={1}>
+                      {item.type === 'note' ? (item.content?.substring(0, 50) || 'Empty note') : item.type === 'image' ? (item.description || 'Image Upload') : (item.description || item.url)}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color="#d6d3d1" />
+                </TouchableOpacity>
+              ))}
+            </View>
           )}
         </View>
       </ScrollView>

@@ -1,20 +1,82 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../types/navigation';
 import { useNotesStore } from '../store/notesStore';
 import { useLinksStore } from '../store/linksStore';
+import { useImagesStore } from '../store/imagesStore';
+
+const FeedItemIcon = ({ item }: { item: any }) => {
+  const [error, setError] = useState(false);
+
+  if (item.type === 'image' && item.imageUrl && !error) {
+    return (
+      <View className="w-16 h-16 rounded-xl bg-stone-100 dark:bg-stone-800 mr-3 overflow-hidden">
+        <Image 
+          source={{ uri: item.imageUrl }} 
+          style={{ width: '100%', height: '100%' }}
+          resizeMode="cover" 
+          onError={() => setError(true)}
+        />
+      </View>
+    );
+  }
+
+  return (
+    <View className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${item.type === 'note' ? 'bg-amber-50 dark:bg-amber-900/30' : item.type === 'link' ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-emerald-50 dark:bg-emerald-900/30'}`}>
+      <Ionicons name={item.type === 'note' ? 'document-text' : item.type === 'link' ? 'link' : 'image'} size={20} color={item.type === 'note' ? '#f59e0b' : item.type === 'link' ? '#3b82f6' : '#10b981'} />
+    </View>
+  );
+};
 
 export default function HomeScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   const { notes } = useNotesStore();
   const { links } = useLinksStore();
+  const { images } = useImagesStore();
+
+  const handleImagePick = () => {
+    Alert.alert('Upload Image', 'Choose an option', [
+      {
+        text: 'Pick from Gallery',
+        onPress: async () => {
+          const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 0.8,
+            allowsMultipleSelection: true,
+          });
+          if (!result.canceled && result.assets && result.assets.length > 0) {
+            navigation.navigate('CreateImage', { uris: result.assets.map(a => a.uri) });
+          }
+        }
+      },
+      {
+        text: 'Take Photo',
+        onPress: async () => {
+          const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+          if (permissionResult.granted === false) {
+            Alert.alert('Permission required', 'Camera access is required to take a photo.');
+            return;
+          }
+          const result = await ImagePicker.launchCameraAsync({
+            quality: 0.8,
+          });
+          if (!result.canceled && result.assets && result.assets.length > 0) {
+            navigation.navigate('CreateImage', { uris: [result.assets[0].uri] });
+          }
+        }
+      },
+      { text: 'Cancel', style: 'cancel' }
+    ]);
+  };
 
   const allDumps = [
     ...notes.map(n => ({ ...n, type: 'note' as const })),
-    ...links.map(l => ({ ...l, type: 'link' as const }))
+    ...links.map(l => ({ ...l, type: 'link' as const })),
+    ...images.map(img => ({ ...img, type: 'image' as const }))
   ].sort((a, b) => b.createdAt - a.createdAt);
 
   return (
@@ -36,7 +98,7 @@ export default function HomeScreen() {
       <View className="flex-row gap-4 mb-6">
         <View className="flex-1 bg-white dark:bg-stone-900 p-4 rounded-2xl border border-stone-100 dark:border-stone-850 shadow-sm">
           <Text className="text-stone-400 dark:text-stone-550 text-xs font-semibold uppercase tracking-wider">Total Items</Text>
-          <Text className="text-stone-800 dark:text-stone-100 text-2xl font-black mt-1">{notes.length + links.length}</Text>
+          <Text className="text-stone-800 dark:text-stone-100 text-2xl font-black mt-1">{notes.length + links.length + images.length}</Text>
         </View>
         <View className="flex-1 bg-white dark:bg-stone-900 p-4 rounded-2xl border border-stone-100 dark:border-stone-850 shadow-sm">
           <Text className="text-stone-400 dark:text-stone-550 text-xs font-semibold uppercase tracking-wider">Collections</Text>
@@ -67,7 +129,10 @@ export default function HomeScreen() {
           <Text className="text-stone-700 dark:text-stone-200 font-semibold text-sm">Note</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity className="w-[48%] bg-white dark:bg-stone-900 p-4 rounded-2xl flex-row items-center border border-stone-100 dark:border-stone-850 shadow-sm">
+        <TouchableOpacity 
+          onPress={handleImagePick}
+          className="w-[48%] bg-white dark:bg-stone-900 p-4 rounded-2xl flex-row items-center border border-stone-100 dark:border-stone-850 shadow-sm"
+        >
           <View className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 items-center justify-center mr-3">
             <Ionicons name="image" size={20} color="#10b981" />
           </View>
@@ -99,18 +164,20 @@ export default function HomeScreen() {
           allDumps.slice(0, 5).map((item, index) => (
             <TouchableOpacity 
               key={item.id}
-              onPress={() => item.type === 'note' ? navigation.navigate('CreateNote', { noteId: item.id }) : navigation.navigate('CreateLink', { linkId: item.id })}
+              onPress={() => {
+                if (item.type === 'note') navigation.navigate('CreateNote', { noteId: item.id });
+                else if (item.type === 'link') navigation.navigate('CreateLink', { linkId: item.id });
+                else if (item.type === 'image') navigation.navigate('CreateImage', { imageId: item.id });
+              }}
               className={`flex-row items-center p-4 ${index !== Math.min(allDumps.length, 5) - 1 ? 'border-b border-stone-50 dark:border-stone-850' : ''}`}
             >
-              <View className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${item.type === 'note' ? 'bg-amber-50 dark:bg-amber-900/30' : 'bg-blue-50 dark:bg-blue-900/30'}`}>
-                <Ionicons name={item.type === 'note' ? 'document-text' : 'link'} size={20} color={item.type === 'note' ? '#f59e0b' : '#3b82f6'} />
-              </View>
+              <FeedItemIcon item={item} />
               <View className="flex-1">
                 <Text className="text-stone-800 dark:text-stone-100 font-semibold text-sm" numberOfLines={1}>
-                  {item.title || (item.type === 'note' ? 'Untitled Note' : item.url)}
+                  {item.title || (item.type === 'note' ? 'Untitled Note' : item.type === 'image' ? 'Untitled Image' : item.url)}
                 </Text>
                 <Text className="text-stone-400 dark:text-stone-550 text-xs" numberOfLines={1}>
-                  {item.type === 'note' ? (item.content.substring(0, 50) || 'Empty note') : (item.description || item.url)}
+                  {item.type === 'note' ? (item.content?.substring(0, 50) || 'Empty note') : item.type === 'image' ? (item.description || 'Image Upload') : (item.description || item.url)}
                 </Text>
               </View>
               <View className="px-2 py-1 bg-stone-100 dark:bg-stone-800 rounded-md">

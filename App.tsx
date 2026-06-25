@@ -10,6 +10,7 @@ import { useAutoTheme } from './src/hooks/useAutoTheme';
 import { subscribeToNotes } from './src/services/notes';
 import { subscribeToLinks } from './src/services/links';
 import { subscribeToCollections } from './src/services/collections';
+import { subscribeToImages } from './src/services/images';
 
 export default function App() {
   // Sync core styling theme with nativewind engine
@@ -19,10 +20,12 @@ export default function App() {
     const unsubscribeNotes = subscribeToNotes();
     const unsubscribeLinks = subscribeToLinks();
     const unsubscribeCollections = subscribeToCollections();
+    const unsubscribeImages = subscribeToImages();
     return () => {
       unsubscribeNotes();
       unsubscribeLinks();
       unsubscribeCollections();
+      unsubscribeImages();
     };
   }, []);
   

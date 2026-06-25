@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useCollectionsStore } from '../store/collectionsStore';
 import { useNotesStore } from '../store/notesStore';
 import { useLinksStore } from '../store/linksStore';
+import { useImagesStore } from '../store/imagesStore';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../types/navigation';
 import { createCollection, updateCollection, deleteCollection } from '../services/collections';
@@ -13,6 +14,7 @@ export default function CollectionsScreen() {
   const { collections } = useCollectionsStore();
   const { notes } = useNotesStore();
   const { links } = useLinksStore();
+  const { images } = useImagesStore();
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
   
   // Modal state
@@ -111,7 +113,7 @@ export default function CollectionsScreen() {
                 {item.name}
               </Text>
               <Text className="text-stone-400 dark:text-stone-500 text-xs">
-                {notes.filter(n => n.collectionId === item.id).length + links.filter(l => l.collectionId === item.id).length} assets
+                {notes.filter(n => n.collectionId === item.id).length + links.filter(l => l.collectionId === item.id).length + images.filter(img => img.collectionId === item.id).length} assets
               </Text>
 
               {/* Folder Action Pin */}
