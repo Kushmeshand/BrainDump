@@ -8,6 +8,7 @@ import { useNotesStore } from '../store/notesStore';
 import { useLinksStore } from '../store/linksStore';
 import { useCollectionsStore } from '../store/collectionsStore';
 import { useImagesStore } from '../store/imagesStore';
+import { usePdfsStore } from '../store/pdfsStore';
 
 const ImageSearchThumbnail = ({ imageUrl }: { imageUrl: string }) => {
   const [error, setError] = useState(false);
@@ -53,6 +54,7 @@ export default function SearchScreen() {
   const links = useLinksStore(state => state.links);
   const collections = useCollectionsStore(state => state.collections);
   const images = useImagesStore(state => state.images);
+  const pdfs = usePdfsStore(state => state.pdfs);
 
   const queryLower = searchQuery.toLowerCase().trim();
   const queryWords = queryLower.split(' ').filter(w => w.length > 0);
@@ -121,6 +123,22 @@ export default function SearchScreen() {
     );
   }) : [];
 
+  const filteredPdfs = queryWords.length > 0 ? pdfs.filter(pdf => {
+    const coll = collections.find(c => c.id === pdf.collectionId);
+
+    const title = (pdf.title || '').toLowerCase();
+    const description = (pdf.description || '').toLowerCase();
+    const collectionName = coll ? (coll.name || '').toLowerCase() : '';
+    const fileName = (pdf.fileName || '').toLowerCase();
+
+    return queryWords.every(word =>
+      title.includes(word) ||
+      description.includes(word) ||
+      collectionName.includes(word) ||
+      fileName.includes(word)
+    );
+  }) : [];
+
   console.log("RENDER_START: SearchScreen rendering. query:", searchQuery, "filteredNotes:", filteredNotes.length);
 
   return (
@@ -157,7 +175,7 @@ export default function SearchScreen() {
                 </Text>
               </View>
             );
-          } else if (filteredNotes.length === 0 && filteredLinks.length === 0 && filteredCollections.length === 0 && filteredImages.length === 0) {
+          } else if (filteredNotes.length === 0 && filteredLinks.length === 0 && filteredCollections.length === 0 && filteredImages.length === 0 && filteredPdfs.length === 0) {
             console.log("RENDER_BRANCH: No Results Found Branch");
             return (
               <View className="py-12 items-center justify-center">
@@ -265,6 +283,48 @@ export default function SearchScreen() {
                               )}
                               <Text className="text-stone-400 dark:text-stone-500 text-xs">
                                 {formatDate(img.createdAt)}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  );
+                })()}
+
+                {filteredPdfs.length > 0 && (() => {
+                  console.log("RENDER_SECTION: PDFs");
+                  return (
+                    <View className="mb-6">
+                      <Text className="text-stone-800 dark:text-stone-100 font-bold text-lg mb-3 ml-1">PDFs</Text>
+                      {filteredPdfs.map(pdf => {
+                        console.log("RENDER_ITEM: PDF ID", pdf.id);
+                        return (
+                          <TouchableOpacity
+                            key={pdf.id}
+                            onPress={() => navigation.navigate('CreatePdf', { pdfId: pdf.id })}
+                            className="bg-white dark:bg-stone-900 p-4 rounded-2xl border border-stone-100 dark:border-stone-850 mb-3 shadow-sm flex-row items-center"
+                          >
+                            <View className="w-16 h-16 rounded-xl bg-rose-50 dark:bg-rose-950/30 items-center justify-center mr-3">
+                              <Ionicons name="document-text" size={24} color="#e11d48" />
+                            </View>
+                            <View className="flex-1 justify-center">
+                              <View className="flex-row items-center mb-1">
+                                <Ionicons name="document-outline" size={14} color="#e11d48" />
+                                <Text className="text-stone-800 dark:text-stone-100 font-bold ml-2 flex-1" numberOfLines={1}>
+                                  {pdf.title || pdf.fileName}
+                                </Text>
+                              </View>
+                              <Text className="text-stone-500 dark:text-stone-400 text-xs leading-5 mb-1" numberOfLines={1}>
+                                {(pdf.fileSize / 1024 / 1024).toFixed(2)} MB {pdf.pageCount ? `• ${pdf.pageCount} pages` : ''}
+                              </Text>
+                              {!!pdf.description && (
+                                <Text className="text-stone-500 dark:text-stone-400 text-xs leading-4 mb-1" numberOfLines={1}>
+                                  {pdf.description}
+                                </Text>
+                              )}
+                              <Text className="text-stone-400 dark:text-stone-500 text-xs mt-1">
+                                {formatDate(pdf.createdAt)}
                               </Text>
                             </View>
                           </TouchableOpacity>

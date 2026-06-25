@@ -11,6 +11,8 @@ export type RootStackParamList = {
   CreateLink: { linkId?: string } | undefined;
   CreateImage: { uri?: string; uris?: string[]; imageId?: string };
   ImageViewer: { imageId: string };
+  CreatePdf: { uris?: string[]; pdfId?: string };
+  PdfViewer: { pdfId: string };
   CollectionDetails: { collectionId: string };
 };
 

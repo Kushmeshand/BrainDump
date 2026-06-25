@@ -6,6 +6,8 @@ import CreateLinkScreen from '../screens/CreateLink';
 import CollectionDetailsScreen from '../screens/CollectionDetails';
 import CreateImageScreen from '../screens/CreateImage';
 import ImageViewerScreen from '../screens/ImageViewer';
+import CreatePdfScreen from '../screens/CreatePdf';
+import PdfViewerScreen from '../screens/PdfViewer';
 import { RootStackParamList } from '../types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -36,6 +38,16 @@ export default function RootNavigator(): React.JSX.Element {
       <Stack.Screen 
         name="ImageViewer" 
         component={ImageViewerScreen} 
+        options={{ presentation: 'fullScreenModal' }}
+      />
+      <Stack.Screen 
+        name="CreatePdf" 
+        component={CreatePdfScreen} 
+        options={{ presentation: 'fullScreenModal' }}
+      />
+      <Stack.Screen 
+        name="PdfViewer" 
+        component={PdfViewerScreen} 
         options={{ presentation: 'fullScreenModal' }}
       />
     </Stack.Navigator>

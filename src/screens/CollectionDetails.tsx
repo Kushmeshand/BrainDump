@@ -8,6 +8,7 @@ import { useCollectionsStore } from '../store/collectionsStore';
 import { useNotesStore } from '../store/notesStore';
 import { useLinksStore } from '../store/linksStore';
 import { useImagesStore } from '../store/imagesStore';
+import { usePdfsStore } from '../store/pdfsStore';
 
 const FeedItemIcon = ({ item }: { item: any }) => {
   const [error, setError] = useState(false);
@@ -26,8 +27,8 @@ const FeedItemIcon = ({ item }: { item: any }) => {
   }
 
   return (
-    <View className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${item.type === 'note' ? 'bg-amber-50 dark:bg-amber-900/30' : item.type === 'link' ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-emerald-50 dark:bg-emerald-900/30'}`}>
-      <Ionicons name={item.type === 'note' ? 'document-text' : item.type === 'link' ? 'link' : 'image'} size={20} color={item.type === 'note' ? '#f59e0b' : item.type === 'link' ? '#3b82f6' : '#10b981'} />
+    <View className={`w-10 h-10 rounded-full items-center justify-center mr-3 ${item.type === 'note' ? 'bg-amber-50 dark:bg-amber-900/30' : item.type === 'link' ? 'bg-blue-50 dark:bg-blue-900/30' : item.type === 'pdf' ? 'bg-rose-50 dark:bg-rose-900/30' : 'bg-emerald-50 dark:bg-emerald-900/30'}`}>
+      <Ionicons name={item.type === 'note' ? 'document-text' : item.type === 'link' ? 'link' : item.type === 'pdf' ? 'document-text-outline' : 'image'} size={20} color={item.type === 'note' ? '#f59e0b' : item.type === 'link' ? '#3b82f6' : item.type === 'pdf' ? '#e11d48' : '#10b981'} />
     </View>
   );
 };
@@ -55,10 +56,15 @@ export default function CollectionDetailsScreen() {
     state.images.filter(img => img.collectionId === collectionId)
   );
 
+  const pdfs = usePdfsStore(state => 
+    state.pdfs.filter(pdf => pdf.collectionId === collectionId)
+  );
+
   const collectionItems = [
     ...notes.map(n => ({ ...n, type: 'note' as const })),
     ...links.map(l => ({ ...l, type: 'link' as const })),
-    ...images.map(img => ({ ...img, type: 'image' as const }))
+    ...images.map(img => ({ ...img, type: 'image' as const })),
+    ...pdfs.map(pdf => ({ ...pdf, type: 'pdf' as const }))
   ].sort((a, b) => b.createdAt - a.createdAt);
 
   if (!collection) {
@@ -101,7 +107,7 @@ export default function CollectionDetailsScreen() {
               </View>
               <Text className="text-stone-800 dark:text-stone-100 font-bold text-lg mb-2">Empty Collection</Text>
               <Text className="text-stone-500 dark:text-stone-400 text-center px-4">
-                This collection doesn't have any notes, links, or images yet. Add items via Quick Add.
+                This collection doesn't have any notes, links, images, or PDFs yet. Add items via Quick Add.
               </Text>
             </View>
           ) : (
@@ -113,16 +119,17 @@ export default function CollectionDetailsScreen() {
                     if (item.type === 'note') navigation.navigate('CreateNote', { noteId: item.id });
                     else if (item.type === 'link') navigation.navigate('CreateLink', { linkId: item.id });
                     else if (item.type === 'image') navigation.navigate('CreateImage', { imageId: item.id });
+                    else if (item.type === 'pdf') navigation.navigate('CreatePdf', { pdfId: item.id });
                   }}
                   className={`flex-row items-center p-4 ${index !== collectionItems.length - 1 ? 'border-b border-stone-50 dark:border-stone-850' : ''}`}
                 >
                   <FeedItemIcon item={item} />
                   <View className="flex-1">
                     <Text className="text-stone-800 dark:text-stone-100 font-semibold text-base" numberOfLines={1}>
-                      {item.title || (item.type === 'note' ? 'Untitled Note' : item.type === 'image' ? 'Untitled Image' : item.url)}
+                      {item.title || (item.type === 'note' ? 'Untitled Note' : item.type === 'image' ? 'Untitled Image' : item.type === 'pdf' ? item.fileName : item.url)}
                     </Text>
                     <Text className="text-stone-400 dark:text-stone-550 text-xs mt-0.5" numberOfLines={1}>
-                      {item.type === 'note' ? (item.content?.substring(0, 50) || 'Empty note') : item.type === 'image' ? (item.description || 'Image Upload') : (item.description || item.url)}
+                      {item.type === 'note' ? (item.content?.substring(0, 50) || 'Empty note') : item.type === 'pdf' ? (item.description || 'PDF Document') : item.type === 'image' ? (item.description || 'Image Upload') : (item.description || item.url)}
                     </Text>
                   </View>
                   <Ionicons name="chevron-forward" size={16} color="#d6d3d1" />

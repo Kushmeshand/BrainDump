@@ -11,6 +11,7 @@ import { subscribeToNotes } from './src/services/notes';
 import { subscribeToLinks } from './src/services/links';
 import { subscribeToCollections } from './src/services/collections';
 import { subscribeToImages } from './src/services/images';
+import { subscribeToPdfs } from './src/services/pdfs';
 
 export default function App() {
   // Sync core styling theme with nativewind engine
@@ -21,11 +22,13 @@ export default function App() {
     const unsubscribeLinks = subscribeToLinks();
     const unsubscribeCollections = subscribeToCollections();
     const unsubscribeImages = subscribeToImages();
+    const unsubscribePdfs = subscribeToPdfs();
     return () => {
       unsubscribeNotes();
       unsubscribeLinks();
       unsubscribeCollections();
       unsubscribeImages();
+      unsubscribePdfs();
     };
   }, []);
   
