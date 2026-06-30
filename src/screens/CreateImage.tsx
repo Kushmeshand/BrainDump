@@ -8,6 +8,7 @@ import { useCollectionsStore } from '../store/collectionsStore';
 import { useImagesStore } from '../store/imagesStore';
 import { createImage, updateImage, deleteImage } from '../services/images';
 import TagInput from '../components/TagInput';
+import AIStudyAssistant from '../components/AIStudyAssistant';
 
 export default function CreateImageScreen() {
   const navigation = useNavigation<NavigationProp<RootStackParamList>>();
@@ -37,7 +38,8 @@ export default function CreateImageScreen() {
         // Edit mode: only update Firestore, DO NOT re-upload image
         const finalTitle = title.trim() || 'Untitled Image';
         await updateImage(existingImage.id, finalTitle, description, collectionId, tags, favorite);
-        navigation.goBack();
+        if (navigation.canGoBack()) navigation.goBack();
+        else navigation.navigate('MainTabs', { screen: 'Home' } as any);
       } else if (selectedUris.length > 0) {
         // Create mode: sequentially upload images
         for (let i = 0; i < selectedUris.length; i++) {
@@ -59,7 +61,8 @@ export default function CreateImageScreen() {
             (progress) => setUploadProgress(progress)
           );
         }
-        navigation.goBack();
+        if (navigation.canGoBack()) navigation.goBack();
+        else navigation.navigate('MainTabs', { screen: 'Home' } as any);
       }
     } catch (error) {
       Alert.alert('Upload Failed', 'There was an error saving your image(s).');
@@ -80,7 +83,8 @@ export default function CreateImageScreen() {
           style: 'destructive',
           onPress: async () => {
             await deleteImage(existingImage.id);
-            navigation.goBack();
+            if (navigation.canGoBack()) navigation.goBack();
+            else navigation.navigate('MainTabs', { screen: 'Home' } as any);
           }
         }
       ]
@@ -219,7 +223,29 @@ export default function CreateImageScreen() {
               <Text className="ml-2 text-red-500 font-bold">Delete Image</Text>
             </TouchableOpacity>
           )}
+
+          {imageId && existingImage && (
+            <View className="mt-4">
+              <AIStudyAssistant
+                type="image"
+                id={imageId}
+                aiGeneratedAt={existingImage.aiGeneratedAt}
+                aiExplain={existingImage.aiExplain}
+                aiQuiz={existingImage.aiQuiz}
+                aiViva={existingImage.aiViva}
+                aiRevisionNotes={existingImage.aiRevisionNotes}
+                getContextInput={() => ({
+                  title,
+                  description,
+                  tags,
+                  collectionName: collectionId ? collections.find(c => c.id === collectionId)?.name : undefined,
+                  extractedText: (existingImage as any).ocrText || (existingImage as any).ocr
+                })}
+              />
+            </View>
+          )}
         </View>
+        <View className="h-20" />
       </ScrollView>
 
       {/* Upload Progress Overlay */}

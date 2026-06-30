@@ -80,7 +80,7 @@ export default function SearchScreen() {
       ocrText.includes(word) ||
       tags.includes(word)
     );
-  }) : [];
+  }) : notes;
 
   const filteredLinks = queryWords.length > 0 ? links.filter(link => {
     const coll = collections.find(c => c.id === link.collectionId);
@@ -100,7 +100,7 @@ export default function SearchScreen() {
       ocrText.includes(word) ||
       tags.includes(word)
     );
-  }) : [];
+  }) : links;
 
   const filteredCollections = queryWords.length > 0 ? collections.filter(coll => {
     const name = (coll.name || '').toLowerCase();
@@ -110,7 +110,7 @@ export default function SearchScreen() {
       name.includes(word) ||
       description.includes(word)
     );
-  }) : [];
+  }) : collections;
 
   const filteredImages = queryWords.length > 0 ? images.filter(img => {
     const coll = collections.find(c => c.id === img.collectionId);
@@ -126,7 +126,7 @@ export default function SearchScreen() {
       collectionName.includes(word) ||
       tags.includes(word)
     );
-  }) : [];
+  }) : images;
 
   const filteredPdfs = queryWords.length > 0 ? pdfs.filter(pdf => {
     const coll = collections.find(c => c.id === pdf.collectionId);
@@ -135,14 +135,16 @@ export default function SearchScreen() {
     const description = (pdf.description || '').toLowerCase();
     const collectionName = coll ? (coll.name || '').toLowerCase() : '';
     const fileName = (pdf.fileName || '').toLowerCase();
+    const extractedText = (pdf.extractedText || '').toLowerCase();
 
     return queryWords.every(word =>
       title.includes(word) ||
       description.includes(word) ||
       collectionName.includes(word) ||
-      fileName.includes(word)
+      fileName.includes(word) ||
+      extractedText.includes(word)
     );
-  }) : [];
+  }) : pdfs;
 
   const unifiedResults = [
     ...filteredNotes.map(n => ({ ...n, type: 'note' as const })),
@@ -183,24 +185,23 @@ export default function SearchScreen() {
 
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }} style={{ flex: 1 }}>
         {(() => {
-          if (searchQuery.trim().length === 0) {
-            console.log("RENDER_BRANCH: Empty Query Branch");
-            return (
-              <View className="py-12 items-center justify-center">
-                <Ionicons name="sparkles-outline" size={48} color="#8b5cf6" />
-                <Text className="text-stone-800 dark:text-stone-100 text-lg font-bold mt-4">Search your Vault</Text>
-                <Text className="text-stone-400 dark:text-stone-550 text-sm text-center mt-2 px-6">
-                  Start typing to instantly search your notes, links, and collections.
-                </Text>
-              </View>
-            );
-          } else if (filteredNotes.length === 0 && filteredLinks.length === 0 && filteredCollections.length === 0 && filteredImages.length === 0 && filteredPdfs.length === 0) {
+          if (filteredNotes.length === 0 && filteredLinks.length === 0 && filteredCollections.length === 0 && filteredImages.length === 0 && filteredPdfs.length === 0 && searchQuery.length > 0) {
             console.log("RENDER_BRANCH: No Results Found Branch");
             return (
               <View className="py-12 items-center justify-center">
                 <Ionicons name="search-outline" size={48} color="#d6d3d1" />
                 <Text className="text-stone-500 dark:text-stone-400 font-medium text-center mt-4">
                   No results found for "{searchQuery}".
+                </Text>
+              </View>
+            );
+          } else if (unifiedResults.length === 0 && collections.length === 0) {
+            return (
+              <View className="py-12 items-center justify-center">
+                <Ionicons name="sparkles-outline" size={48} color="#8b5cf6" />
+                <Text className="text-stone-800 dark:text-stone-100 text-lg font-bold mt-4">Your Vault is Empty</Text>
+                <Text className="text-stone-400 dark:text-stone-550 text-sm text-center mt-2 px-6">
+                  Add some resources to see them here.
                 </Text>
               </View>
             );

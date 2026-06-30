@@ -72,7 +72,7 @@ export default function AppNavigator(): React.JSX.Element {
       <Tab.Screen 
         name="Collections" 
         component={CollectionsScreen} 
-        options={{ title: 'My Collections' }}
+        options={{ title: 'Library' }}
       />
       <Tab.Screen 
         name="Favorites" 

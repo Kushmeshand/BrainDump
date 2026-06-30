@@ -7,7 +7,9 @@ import { RootStackParamList } from '../types/navigation';
 import { useCollectionsStore } from '../store/collectionsStore';
 import { useNotesStore } from '../store/notesStore';
 import { createNote, updateNote, deleteNote } from '../services/notes';
+import { aiService } from '../services/ai/aiService';
 import TagInput from '../components/TagInput';
+import AIStudyAssistant from '../components/AIStudyAssistant';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'CreateNote'>;
 
@@ -15,6 +17,7 @@ export default function CreateNoteScreen({ route, navigation }: Props) {
   const noteId = route.params?.noteId;
   const { collections } = useCollectionsStore();
   const { notes } = useNotesStore();
+  const existingNote = noteId ? notes.find((n) => n.id === noteId) : undefined;
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -23,19 +26,69 @@ export default function CreateNoteScreen({ route, navigation }: Props) {
   const [favorite, setFavorite] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCollections, setShowCollections] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // AI local states
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
+  const [isSuggestingTags, setIsSuggestingTags] = useState(false);
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
 
   useEffect(() => {
-    if (noteId) {
-      const existingNote = notes.find((n) => n.id === noteId);
-      if (existingNote) {
-        setTitle(existingNote.title);
-        setContent(existingNote.content);
-        setCollectionId(existingNote.collectionId);
-        setTags(existingNote.tags || []);
-        setFavorite(existingNote.favorite || false);
+    if (noteId && !isInitialized) {
+      const existing = notes.find((n) => n.id === noteId);
+      if (existing) {
+        setTitle(existing.title);
+        setContent(existing.content);
+        setCollectionId(existing.collectionId);
+        setTags(existing.tags || []);
+        setFavorite(existing.favorite || false);
+        setIsInitialized(true);
       }
     }
-  }, [noteId, notes]);
+  }, [noteId, notes, isInitialized]);
+
+  const handleAutoTitle = async () => {
+    if (!content.trim()) return;
+    setIsGeneratingTitle(true);
+    try {
+      const generated = await aiService.generateContent({
+        description: content.trim(),
+        userPrompt: "Generate a concise, catchy title (3-5 words) for this note content. Return ONLY the title string, no quotes or surrounding text."
+      });
+      if (generated && generated.trim()) {
+        setTitle(generated.trim().replace(/^["']|["']$/g, ''));
+      }
+    } catch (error: any) {
+      console.error('Error generating title:', error);
+      Alert.alert('AI Error', error?.message || 'Failed to generate title. Check your internet connection and API key.');
+    } finally {
+      setIsGeneratingTitle(false);
+    }
+  };
+
+  const handleSuggestTags = async () => {
+    if (!content.trim()) return;
+    setIsSuggestingTags(true);
+    try {
+      const activeCollName = collectionId ? collections.find(c => c.id === collectionId)?.name : undefined;
+      const suggestions = await aiService.suggestTags({
+        title: title.trim() || undefined,
+        description: content.trim(),
+        collection: activeCollName || undefined,
+        tags
+      });
+      const filtered = suggestions.filter(t => !tags.includes(t));
+      setSuggestedTags(filtered);
+      if (filtered.length === 0) {
+        Alert.alert('AI Feedback', 'No new tags to suggest.');
+      }
+    } catch (error: any) {
+      console.error('Error suggesting tags:', error);
+      Alert.alert('AI Error', error?.message || 'Failed to suggest tags. Check your internet connection and API key.');
+    } finally {
+      setIsSuggestingTags(false);
+    }
+  };
 
   const handleSave = () => {
     if (!title.trim() && !content.trim()) {
@@ -54,7 +107,8 @@ export default function CreateNoteScreen({ route, navigation }: Props) {
       }
       
       // Dismiss screen immediately
-      navigation.goBack();
+      if (navigation.canGoBack()) navigation.goBack();
+      else navigation.navigate('MainTabs', { screen: 'Home' } as any);
     } catch (error) {
       Alert.alert('Error', 'Failed to save note');
       console.error(error);
@@ -73,7 +127,8 @@ export default function CreateNoteScreen({ route, navigation }: Props) {
           setIsSubmitting(true);
           try {
             deleteNote(noteId).catch(console.error);
-            navigation.goBack();
+            if (navigation.canGoBack()) navigation.goBack();
+            else navigation.navigate('MainTabs', { screen: 'Home' } as any);
           } catch (error) {
             Alert.alert('Error', 'Failed to delete note');
             setIsSubmitting(false);
@@ -127,16 +182,35 @@ export default function CreateNoteScreen({ route, navigation }: Props) {
             className="text-stone-900 dark:text-stone-100 text-3xl font-black mb-4 mt-2"
           />
 
-          <TouchableOpacity 
-            onPress={() => setShowCollections(!showCollections)}
-            className="flex-row items-center self-start bg-stone-100 dark:bg-stone-900 px-3 py-1.5 rounded-lg mb-6 border border-stone-200 dark:border-stone-800"
-          >
-            <Ionicons name="folder-outline" size={16} color="#78716c" />
-            <Text className="text-stone-600 dark:text-stone-300 text-sm font-semibold ml-2 mr-1">
-              {collectionId ? collections.find(c => c.id === collectionId)?.name || 'Select Collection' : 'No Collection'}
-            </Text>
-            <Ionicons name="chevron-down" size={14} color="#78716c" />
-          </TouchableOpacity>
+          <View className="flex-row items-center gap-x-2 mb-6">
+            <TouchableOpacity 
+              onPress={() => setShowCollections(!showCollections)}
+              className="flex-row items-center bg-stone-100 dark:bg-stone-900 px-3 py-1.5 rounded-lg border border-stone-200 dark:border-stone-800"
+            >
+              <Ionicons name="folder-outline" size={16} color="#78716c" />
+              <Text className="text-stone-600 dark:text-stone-300 text-sm font-semibold ml-2 mr-1">
+                {collectionId ? collections.find(c => c.id === collectionId)?.name || 'Select Collection' : 'No Collection'}
+              </Text>
+              <Ionicons name="chevron-down" size={14} color="#78716c" />
+            </TouchableOpacity>
+
+            {content.trim().length > 10 && (
+              <TouchableOpacity 
+                onPress={handleAutoTitle}
+                disabled={isGeneratingTitle}
+                className="flex-row items-center bg-brand-50 dark:bg-brand-950/30 border border-brand-200 dark:border-brand-900/50 px-3 py-1.5 rounded-lg"
+              >
+                {isGeneratingTitle ? (
+                  <ActivityIndicator size="small" color="#8b5cf6" />
+                ) : (
+                  <>
+                    <Ionicons name="sparkles-outline" size={14} color="#8b5cf6" />
+                    <Text className="text-brand-600 dark:text-brand-400 text-sm font-semibold ml-1.5">Auto-Title</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            )}
+          </View>
 
           {showCollections && (
             <View className="bg-white dark:bg-stone-900 rounded-2xl border border-stone-100 dark:border-stone-850 mb-6 overflow-hidden shadow-sm">
@@ -160,7 +234,47 @@ export default function CreateNoteScreen({ route, navigation }: Props) {
             </View>
           )}
 
+          <View className="flex-row items-center justify-between mb-2">
+            <Text className="text-sm font-semibold text-stone-600 dark:text-stone-400">Tags</Text>
+            {content.trim().length > 10 && (
+              <TouchableOpacity 
+                onPress={handleSuggestTags}
+                disabled={isSuggestingTags}
+                className="flex-row items-center"
+              >
+                {isSuggestingTags ? (
+                  <ActivityIndicator size="small" color="#8b5cf6" className="mr-1" />
+                ) : (
+                  <Ionicons name="sparkles-outline" size={14} color="#8b5cf6" className="mr-1" />
+                )}
+                <Text className="text-brand-600 dark:text-brand-400 text-sm font-semibold">Suggest Tags</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
           <TagInput tags={tags} setTags={setTags} />
+
+          {suggestedTags.length > 0 && (
+            <View className="mb-6 -mt-2">
+              <Text className="text-xs text-stone-400 dark:text-stone-500 mb-2">AI Suggestions (tap to add):</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {suggestedTags.map((t, idx) => (
+                  <TouchableOpacity
+                    key={`sugg-${t}-${idx}`}
+                    onPress={() => {
+                      if (!tags.includes(t)) {
+                        setTags([...tags, t]);
+                      }
+                      setSuggestedTags(suggestedTags.filter(st => st !== t));
+                    }}
+                    className="bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 px-3 py-1 rounded-full flex-row items-center"
+                  >
+                    <Text className="text-stone-600 dark:text-stone-300 text-xs">+{t}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
 
           <TextInput
             placeholder="Start typing..."
@@ -169,9 +283,31 @@ export default function CreateNoteScreen({ route, navigation }: Props) {
             onChangeText={setContent}
             multiline
             textAlignVertical="top"
-            className="text-stone-800 dark:text-stone-100 text-lg leading-7 pb-20"
+            className="text-stone-800 dark:text-stone-100 text-lg leading-7"
             style={{ minHeight: 300 }}
           />
+
+          {noteId && existingNote && (
+            <View className="mt-4">
+              <AIStudyAssistant
+                type="note"
+                id={noteId}
+                aiGeneratedAt={existingNote.aiGeneratedAt}
+                aiExplain={existingNote.aiExplain}
+                aiQuiz={existingNote.aiQuiz}
+                aiViva={existingNote.aiViva}
+                aiRevisionNotes={existingNote.aiRevisionNotes}
+                getContextInput={() => ({
+                  title,
+                  content,
+                  tags,
+                  collectionName: collectionId ? collections.find(c => c.id === collectionId)?.name : undefined,
+                  extractedText: (existingNote as any).ocrText || (existingNote as any).ocr
+                })}
+              />
+            </View>
+          )}
+          <View className="h-20" />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>

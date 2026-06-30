@@ -8,6 +8,8 @@ import CreateImageScreen from '../screens/CreateImage';
 import ImageViewerScreen from '../screens/ImageViewer';
 import CreatePdfScreen from '../screens/CreatePdf';
 import PdfViewerScreen from '../screens/PdfViewer';
+import PdfDebugScreen from '../screens/PdfDebug';
+import ProfileScreen from '../screens/Profile';
 import { RootStackParamList } from '../types/navigation';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -49,6 +51,21 @@ export default function RootNavigator(): React.JSX.Element {
         name="PdfViewer" 
         component={PdfViewerScreen} 
         options={{ presentation: 'fullScreenModal' }}
+      />
+      <Stack.Screen 
+        name="PdfDebug" 
+        component={PdfDebugScreen} 
+        options={{ presentation: 'fullScreenModal' }}
+      />
+      <Stack.Screen 
+        name="Profile" 
+        component={ProfileScreen} 
+        options={{ 
+          headerShown: true, 
+          title: 'Profile',
+          headerBackTitleVisible: false,
+          headerShadowVisible: false,
+        }}
       />
     </Stack.Navigator>
   );

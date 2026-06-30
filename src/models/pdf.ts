@@ -1,3 +1,5 @@
+import { AIQuizResult, AIVivaResult, AIExplanationResult, AIRevisionNotesResult, QuizAttempt } from '../services/ai/types';
+
 export interface PdfItem {
   id: string;
   type: 'pdf';
@@ -13,4 +15,16 @@ export interface PdfItem {
   tags: string[];
   createdAt: number;
   updatedAt: number;
+
+  // Cached AI Summary fields
+  aiReadingTime?: string;
+  aiRevisionTopics?: string[];
+  aiGeneratedAt?: number;
+  aiQuiz?: AIQuizResult;
+  aiQuizAttempts?: QuizAttempt[];
+  aiViva?: AIVivaResult;
+  aiExplain?: AIExplanationResult;
+  aiRevisionNotes?: AIRevisionNotesResult;
+
+  extractedText?: string;
 }

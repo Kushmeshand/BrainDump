@@ -1,7 +1,10 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-
+import { getAuth, initializeAuth } from 'firebase/auth';
+// @ts-ignore - The types for getReactNativePersistence are sometimes missing in older @firebase/auth versions but it exists at runtime
+import { getReactNativePersistence } from 'firebase/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 // PLACEHOLDER CONFIGURATION
 // Swap these with your authentic Firebase Web App credentials when active.
 const firebaseConfig = {
@@ -28,4 +31,9 @@ const db = initializeFirestore(app, {
 });
 const storage = getStorage(app);
 
-export { app, db, storage };
+// Initialize Firebase Auth with React Native persistence to prevent the AsyncStorage warning
+const auth = initializeAuth(app, {
+  persistence: getReactNativePersistence(AsyncStorage)
+});
+
+export { app, db, storage, auth };

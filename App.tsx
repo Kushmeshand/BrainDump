@@ -12,18 +12,25 @@ import { subscribeToLinks } from './src/services/links';
 import { subscribeToCollections } from './src/services/collections';
 import { subscribeToImages } from './src/services/images';
 import { subscribeToPdfs } from './src/services/pdfs';
+import { subscribeToAuthChanges } from './src/services/auth';
 
 export default function App() {
   // Sync core styling theme with nativewind engine
   useAutoTheme();
 
   React.useEffect(() => {
+    // Verify Groq API key configuration status (without printing the actual key)
+    const hasApiKey = !!process.env.EXPO_PUBLIC_GROQ_API_KEY;
+    console.log(`[Groq SDK] API Key Configured: ${hasApiKey ? 'YES' : 'NO'}`);
+
+    const unsubscribeAuth = subscribeToAuthChanges();
     const unsubscribeNotes = subscribeToNotes();
     const unsubscribeLinks = subscribeToLinks();
     const unsubscribeCollections = subscribeToCollections();
     const unsubscribeImages = subscribeToImages();
     const unsubscribePdfs = subscribeToPdfs();
     return () => {
+      unsubscribeAuth();
       unsubscribeNotes();
       unsubscribeLinks();
       unsubscribeCollections();

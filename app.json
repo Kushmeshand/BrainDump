@@ -9,7 +9,8 @@
       "supportsTablet": true
     },
     "android": {
-      "backgroundColor": "#0c0a09"
+      "backgroundColor": "#0c0a09",
+      "package": "com.kushmeshand.braindump"
     },
     "web": {
       "backgroundColor": "#0c0a09"
@@ -21,7 +22,14 @@
           "backgroundColor": "#0c0a09"
         }
       ],
-      "expo-asset"
-    ]
+      "expo-asset",
+      "expo-font",
+      "expo-mlkit-ocr"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "c66c5ad3-b28a-44b7-8053-7868e0cd5204"
+      }
+    }
   }
 }

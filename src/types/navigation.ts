@@ -14,7 +14,9 @@ export type RootStackParamList = {
   ImageViewer: { imageId: string };
   CreatePdf: { uris?: string[]; pdfId?: string };
   PdfViewer: { pdfId: string };
+  PdfDebug: { pdfId: string };
   CollectionDetails: { collectionId: string };
+  Profile: undefined;
 };
 
 export type AuthStackParamList = {
